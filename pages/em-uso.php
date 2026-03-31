@@ -104,20 +104,24 @@ foreach ($categorias as $cat) {
 
 // ================= SEÇÃO EM USO - ITENS SAÍDOS =================
 $where_em_uso = [];
+$where_em_uso_base = [];
 
 if (!empty($_GET['busca_em_uso'])) {
     $busca = mysqli_real_escape_string($cone, $_GET['busca_em_uso']);
     $where_em_uso[] = "ieu.nome LIKE '%$busca%'";
+    $where_em_uso_base[] = "ieu.nome LIKE '%$busca%'";
 }
 
 if (!empty($_GET['setor_em_uso'])) {
     $setor = (int)$_GET['setor_em_uso'];
     $where_em_uso[] = "ieu.setor_id = $setor";
+    $where_em_uso_base[] = "ieu.setor_id = $setor";
 }
 
 if (!empty($_GET['categoria_em_uso'])) {
     $categoria = (int)$_GET['categoria_em_uso'];
     $where_em_uso[] = "ieu.categoria_id = $categoria";
+    $where_em_uso_base[] = "ieu.categoria_id = $categoria";
 }
 
 $porPaginaEmUso = (int)($_GET['limite_em_uso'] ?? 10);
@@ -138,6 +142,16 @@ if (!empty($where_em_uso)) {
 $res_total_em_uso = mysqli_query($cone, $sql_total_em_uso);
 $totalRegistrosEmUso = mysqli_fetch_assoc($res_total_em_uso)['total'] ?? 0;
 $totalPaginasEmUso = max(ceil($totalRegistrosEmUso / $porPaginaEmUso), 1);
+
+$where_base_sql = '';
+if (!empty($where_em_uso_base)) {
+    $where_base_sql = " AND " . implode(" AND ", $where_em_uso_base);
+}
+
+$sql_total_ativos = "SELECT COUNT(*) AS total FROM itens_em_uso ieu WHERE 1=1{$where_base_sql} AND ieu.ativo = 1";
+$sql_total_inativos = "SELECT COUNT(*) AS total FROM itens_em_uso ieu WHERE 1=1{$where_base_sql} AND ieu.ativo = 0";
+$totalAtivosEmUso = mysqli_fetch_assoc(mysqli_query($cone, $sql_total_ativos))['total'] ?? 0;
+$totalInativosEmUso = mysqli_fetch_assoc(mysqli_query($cone, $sql_total_inativos))['total'] ?? 0;
 
 $sql_em_uso = "
     SELECT 
@@ -235,48 +249,25 @@ $resultado_em_uso = mysqli_query($cone, $sql_em_uso);
             <?php unset($_SESSION['erro']); ?>
         <?php endif; ?>
 
-        <!-- FILTROS -->
-        <div class="glass-panel filtros">
-            <form method="GET">
-                <input type="text" name="busca_em_uso" placeholder="Buscar item" value="<?= htmlspecialchars($_GET['busca_em_uso'] ?? '') ?>">
+        <div class="cards">
+            <div class="card kpi-card" role="button" tabindex="0" data-card-action="em-uso-todos" title="Mostrar todos os itens">
+                <h3><?= (int)$totalRegistrosEmUso ?></h3>
+                <span>Total de itens</span>
+            </div>
 
-                <select name="setor_em_uso">
-                    <option value="">Todos os Setores</option>
-                    <?php 
-                    $res_setores_filter = $cone->query("SELECT DISTINCT s.id, s.nome FROM setores s INNER JOIN itens_em_uso ieu ON s.id = ieu.setor_id WHERE s.ativo = 1 ORDER BY s.nome");
-                    while($setor = $res_setores_filter->fetch_assoc()): ?>
-                        <option value="<?= $setor['id'] ?>" <?= ($_GET['setor_em_uso'] ?? '') == $setor['id'] ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($setor['nome']) ?>
-                        </option>
-                    <?php endwhile; ?>
-                </select>
+            <div class="card kpi-card" role="button" tabindex="0" data-card-action="em-uso-ativos" title="Filtrar itens ativos">
+                <h3><?= (int)$totalAtivosEmUso ?></h3>
+                <span>Itens ativos</span>
+            </div>
 
-                <select name="categoria_em_uso">
-                    <option value="">Todas as Categorias</option>
-                    <?php 
-                    $res_cat_filter = $cone->query("SELECT DISTINCT c.id, c.nome FROM categorias c INNER JOIN itens_em_uso ieu ON c.id = ieu.categoria_id WHERE ieu.ativo = 1 ORDER BY c.nome");
-                    while($cat = $res_cat_filter->fetch_assoc()): ?>
-                        <option value="<?= $cat['id'] ?>" <?= ($_GET['categoria_em_uso'] ?? '') == $cat['id'] ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($cat['nome']) ?>
-                        </option>
-                    <?php endwhile; ?>
-                </select>
+            <div class="card kpi-card" role="button" tabindex="0" data-card-action="em-uso-inativos" title="Filtrar itens desativados">
+                <h3><?= (int)$totalInativosEmUso ?></h3>
+                <span>Itens desativados</span>
+            </div>
+        </div>
 
-                <select name="limite_em_uso">
-                    <option value="10" <?= ($_GET['limite_em_uso'] ?? 10) == 10 ? 'selected' : '' ?>>10 por página</option>
-                    <option value="15" <?= ($_GET['limite_em_uso'] ?? 10) == 15 ? 'selected' : '' ?>>15 por página</option>
-                    <option value="25" <?= ($_GET['limite_em_uso'] ?? 10) == 25 ? 'selected' : '' ?>>25 por página</option>
-                    <option value="50" <?= ($_GET['limite_em_uso'] ?? 10) == 50 ? 'selected' : '' ?>>50 por página</option>
-                </select>
-
-                <select name="status_em_uso">
-                <option value="">Todos</option>
-                <option value="1" <?= ($_GET['status_em_uso'] ?? '') === '1' ? 'selected' : '' ?>>Ativos</option>
-                <option value="0" <?= ($_GET['status_em_uso'] ?? '') === '0' ? 'selected' : '' ?>>Desativados</option>
-                </select>
-
-                <button class="btn-primary" type="submit">Filtrar</button>
-            </form>
+        <div class="filter-trigger-row">
+            <button class="btn-primary" type="button" onclick="abrirModal('filtros-em-uso')">Filtros</button>
         </div>
 
         <!-- TABELA -->
@@ -285,8 +276,7 @@ $resultado_em_uso = mysqli_query($cone, $sql_em_uso);
                 <table>
                     <thead>
                             <th style="width: 30%;">Item</th>
-                            <th style="text-align: center; width: 60px;">Qtd.</th>
-                            <th>Data Saída</th>
+                            <th style="width: 10%; text-align:center;">Qtd.</th>
                             <th>Patrimônio</th>
                             <th>Setor</th>
                             <th>Categoria</th>
@@ -309,16 +299,7 @@ $resultado_em_uso = mysqli_query($cone, $sql_em_uso);
             </td>
 
             <td style="text-align:center; font-weight:bold;">
-                <?= (int)$item['quantidade'] ?>
-            </td>
-
-            <td>
-                <?php
-                    $data = $item['data_saida'] ?? null;
-                    echo ($data && $data !== '0000-00-00')
-                        ? date('d/m/Y', strtotime($data))
-                        : '—';
-                ?>
+                1
             </td>
 
             <td style="text-align:center;">
@@ -345,13 +326,11 @@ $resultado_em_uso = mysqli_query($cone, $sql_em_uso);
             <td>
                 <div style="display:flex; gap:6px; justify-content:center;">
 
-                    <?php if (!empty($item['foto_loc'])): ?>
-                        <button class="btn-icon btn-loc"
-                                title="Foto da Localização"
-                                onclick="abrirFotoLocalizacaoEmUso(<?= (int)$item['id'] ?>)">
-                            <img src="/estoquemh/img/loc.png">
-                        </button>
-                    <?php endif; ?>
+                    <button class="btn-icon btn-loc"
+                            title="Foto da Localizacao"
+                            onclick="abrirFotoLocalizacaoEmUso(<?= (int)$item['id'] ?>)">
+                        <img src="/estoquemh/img/loc.png">
+                    </button>
 
                     <button class="btn-icon btn-edit"
                             title="Editar"
@@ -404,7 +383,7 @@ $resultado_em_uso = mysqli_query($cone, $sql_em_uso);
     <?php endwhile; ?>
 <?php else: ?>
     <tr>
-        <td colspan="9"
+        <td colspan="8"
             style="text-align:center; padding:30px; color:var(--text-muted);">
             Nenhum item em uso encontrado.
         </td>
@@ -426,6 +405,58 @@ $resultado_em_uso = mysqli_query($cone, $sql_em_uso);
 </div>
 
 <!-- MODAIS -->
+<!-- Modal: Filtros -->
+<div class="modal-bg" id="modal-filtros-em-uso-bg">
+    <div class="modal">
+        <span class="close" onclick="closeModal('filtros-em-uso')">×</span>
+        <h2>Filtros</h2>
+
+        <form method="GET">
+            <input type="text" name="busca_em_uso" placeholder="Buscar item" value="<?= htmlspecialchars($_GET['busca_em_uso'] ?? '') ?>">
+
+            <select name="setor_em_uso">
+                <option value="">Todos os Setores</option>
+                <?php
+                $res_setores_filter = $cone->query("SELECT DISTINCT s.id, s.nome FROM setores s INNER JOIN itens_em_uso ieu ON s.id = ieu.setor_id WHERE s.ativo = 1 ORDER BY s.nome");
+                while($setor = $res_setores_filter->fetch_assoc()): ?>
+                    <option value="<?= $setor['id'] ?>" <?= ($_GET['setor_em_uso'] ?? '') == $setor['id'] ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($setor['nome']) ?>
+                    </option>
+                <?php endwhile; ?>
+            </select>
+
+            <select name="categoria_em_uso">
+                <option value="">Todas as Categorias</option>
+                <?php
+                $res_cat_filter = $cone->query("SELECT DISTINCT c.id, c.nome FROM categorias c INNER JOIN itens_em_uso ieu ON c.id = ieu.categoria_id WHERE ieu.ativo = 1 ORDER BY c.nome");
+                while($cat = $res_cat_filter->fetch_assoc()): ?>
+                    <option value="<?= $cat['id'] ?>" <?= ($_GET['categoria_em_uso'] ?? '') == $cat['id'] ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($cat['nome']) ?>
+                    </option>
+                <?php endwhile; ?>
+            </select>
+
+            <select name="limite_em_uso">
+                <option value="10" <?= ($_GET['limite_em_uso'] ?? 10) == 10 ? 'selected' : '' ?>>10 por pagina</option>
+                <option value="15" <?= ($_GET['limite_em_uso'] ?? 10) == 15 ? 'selected' : '' ?>>15 por pagina</option>
+                <option value="25" <?= ($_GET['limite_em_uso'] ?? 10) == 25 ? 'selected' : '' ?>>25 por pagina</option>
+                <option value="50" <?= ($_GET['limite_em_uso'] ?? 10) == 50 ? 'selected' : '' ?>>50 por pagina</option>
+            </select>
+
+            <select name="status_em_uso">
+                <option value="">Todos</option>
+                <option value="1" <?= ($_GET['status_em_uso'] ?? '') === '1' ? 'selected' : '' ?>>Ativos</option>
+                <option value="0" <?= ($_GET['status_em_uso'] ?? '') === '0' ? 'selected' : '' ?>>Desativados</option>
+            </select>
+
+            <div class="modal-buttons">
+                <button class="btn-cancel" type="button" onclick="closeModal('filtros-em-uso')">Cancelar</button>
+                <button class="btn-primary" type="submit">Aplicar filtros</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- Modal: Desativar Item em Uso -->
 <div class="modal-bg" id="modal-status-em-uso-bg">
     <div class="modal">
@@ -645,6 +676,39 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
 });
+
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.kpi-card');
+    cards.forEach(function(card) {
+        card.addEventListener('click', function() {
+            handleEmUsoCardClick(card.dataset.cardAction);
+        });
+
+        card.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleEmUsoCardClick(card.dataset.cardAction);
+            }
+        });
+    });
+});
+
+function handleEmUsoCardClick(action) {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('pagina_em_uso');
+
+    if (action === 'em-uso-todos') {
+        url.searchParams.delete('status_em_uso');
+    } else if (action === 'em-uso-ativos') {
+        url.searchParams.set('status_em_uso', '1');
+    } else if (action === 'em-uso-inativos') {
+        url.searchParams.set('status_em_uso', '0');
+    } else {
+        return;
+    }
+
+    window.location.href = url.toString();
+}
 
 function abrirDetalhesEmUso(itemId, itemNome, patrimonio, setor, categoria) {
     document.getElementById('detalhe-item-nome').innerText = itemNome;

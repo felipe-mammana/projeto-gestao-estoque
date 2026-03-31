@@ -487,8 +487,8 @@ if ($res_setores) {
         <h2>Adicionar Item</h2>
 
         <form method="post" action="/estoquemh/php/additem.php" enctype="multipart/form-data">
-            <!-- Manter filtros e paginação -->
-            <input type="hidden" name="redirect_busca" value="<?= htmlspecialchars($_GET['busca'] ?? '') ?>">
+             <!-- Manter filtros e paginação -->
+           <input type="hidden" name="redirect_busca" value="<?= htmlspecialchars($_GET['busca'] ?? '') ?>">
             <input type="hidden" name="redirect_status" value="<?= htmlspecialchars($_GET['status'] ?? '') ?>">
             <input type="hidden" name="redirect_categoria_pai" value="<?= htmlspecialchars($_GET['categoria_pai'] ?? '') ?>">
             <input type="hidden" name="redirect_subcategoria" value="<?= htmlspecialchars($_GET['subcategoria'] ?? '') ?>">

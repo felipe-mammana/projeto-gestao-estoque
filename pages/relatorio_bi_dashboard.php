@@ -288,7 +288,7 @@ $isAdmin = ($_SESSION['usuario']['tipo'] ?? '') === 'admin';
                         </ul>
                     </div>
                     
-                    <a href="/estoquemh/php/relatorio_bi_estoque.php?tipo=estoque_atual" class="btn-export" download>
+                    <a href="/estoquemh/php/relatorio_bi_estoque.php?tipo=estoque_atual&modo=relatorio" class="btn-export" download>
                         <span>⬇️</span> Exportar CSV
                     </a>
                 </div>
@@ -312,8 +312,16 @@ $isAdmin = ($_SESSION['usuario']['tipo'] ?? '') === 'admin';
                     
                     <form method="GET" action="/estoquemh/php/relatorio_bi_estoque.php" class="form-group-inline">
                         <input type="hidden" name="tipo" value="movimentacao">
+                        <input type="hidden" name="modo" value="relatorio">
                         <input type="date" name="data_inicio" value="<?= date('Y-m-d', strtotime('-30 days')) ?>">
                         <input type="date" name="data_fim" value="<?= date('Y-m-d') ?>">
+                        <select name="tipo_mov">
+                            <option value="">Tipo (Todos)</option>
+                            <option value="Entrada">Entrada</option>
+                            <option value="Saída">Saída</option>
+                        </select>
+                        <input type="text" name="item" placeholder="Item (ID ou nome)">
+                        <input type="text" name="usuario" placeholder="UsuÃ¡rio (ID ou nome)">
                         <button type="submit" class="btn-export">
                             <span>⬇️</span> Exportar
                         </button>
@@ -338,6 +346,7 @@ $isAdmin = ($_SESSION['usuario']['tipo'] ?? '') === 'admin';
                     </div>
                     
                     <form method="GET" action="/estoquemh/php/logs_exportar.php" class="form-group-inline">
+                        <input type="hidden" name="modo" value="relatorio">
                         <select name="tipo">
                             <option value="">Todos os tipos</option>
                             <option value="ENTRADA">Apenas Entradas</option>
