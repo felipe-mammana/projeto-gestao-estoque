@@ -10,6 +10,11 @@ $config = require $_SERVER['DOCUMENT_ROOT'] . '/estoquemh/config/email.php';
 $mail = new PHPMailer(true);
 
 try {
+    if (empty($config['user']) || empty($config['pass'])) {
+        error_log('SMTP nao configurado. Defina SMTP_USER e SMTP_PASS no ambiente.');
+        return;
+    }
+
     // Obter destinatários do email dinamicamente
     $destinatarios = obterDestinatariosEmail();
     
@@ -26,11 +31,11 @@ try {
     $mail->Username = $config['user'];
     $mail->Password = $config['pass'];
     $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS; // SSL
-    $mail->Port = 465;
+    $mail->Port = $config['port'];
     $mail->CharSet = 'UTF-8';
 
     // Remetente
-    $mail->setFrom($config['user'], 'Estoque TI');
+    $mail->setFrom($config['user'], $config['from_name']);
 
     // Destinatários dinâmicos
     foreach ($destinatarios as $email) {

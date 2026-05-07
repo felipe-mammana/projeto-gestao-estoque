@@ -1,0 +1,32 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Composer dependencies
+/vendor/
+
+# Runtime uploads and generated user files
+/uploads/*
+!/uploads/.gitkeep
+
+# Logs and reports
+*.log
+*.csv
+lh-report.json
+
+# OS and editor metadata
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Temporary/cache folders
+node_modules/
+dist/
+build/
+__pycache__/
+.pytest_cache/
+.cache/
+tmp/
+temp/
