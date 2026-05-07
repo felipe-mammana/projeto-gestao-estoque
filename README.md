@@ -419,20 +419,6 @@ mysqldump -u root -p estoqueti > backup_estoqueti.sql
 
 ---
 
-## Roadmap Técnico Recomendado
-
-- Migrar queries críticas para prepared statements em 100% dos endpoints.
-- Criar camada de configuração única para ambiente e bootstrap.
-- Desativar `display_errors` em produção e centralizar logs.
-- Adicionar CSRF em todos os formulários POST.
-- Remover dados reais do dump público e manter seeds anonimizadas.
-- Introduzir PHPUnit/Pest para regras de negócio e endpoints.
-- Separar actions, serviços e views para reduzir acoplamento.
-- Criar migrations versionadas em vez de depender apenas de dump SQL.
-- Avaliar Docker Compose para padronizar Apache, PHP e MariaDB.
-
----
-
 <div align="center">
 
 **Estoque MH** · Controle operacional de estoque e patrimônio de TI
